@@ -77,3 +77,9 @@ Thumbs.db
 *.key
 *.p12
 *.pfx
+
+# Added by cargo
+#
+# already existing elements were commented out
+
+#/target
