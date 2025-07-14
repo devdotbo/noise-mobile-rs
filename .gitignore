@@ -1,0 +1,79 @@
+# Rust build artifacts
+/target
+**/*.rs.bk
+*.pdb
+
+# Cargo
+Cargo.lock
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Mobile development artifacts
+# iOS
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Android
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+local.properties
+.gradle/
+build/
+
+# Testing artifacts
+tarpaulin-report.html
+cobertura.xml
+junit.xml
+
+# Benchmarking
+/benches/target
+perf.data
+perf.data.old
+flamegraph.svg
+
+# Documentation
+/target/doc
+/target/criterion
+
+# Environment files
+.env
+.env.local
+
+# OS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Backup files
+*.backup
+*.bak
+*.tmp
+*.temp
+
+# Log files
+*.log
+
+# Security - never commit keys
+*.pem
+*.key
+*.p12
+*.pfx
