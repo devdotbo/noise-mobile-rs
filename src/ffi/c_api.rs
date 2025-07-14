@@ -6,6 +6,20 @@ use libc::{c_char, c_int, c_uchar, size_t};
 use std::ptr;
 use std::slice;
 
+// Constants for C API
+pub const NOISE_MODE_INITIATOR: c_int = 0;
+pub const NOISE_MODE_RESPONDER: c_int = 1;
+
+pub const NOISE_ERROR_SUCCESS: c_int = 0;
+pub const NOISE_ERROR_INVALID_PARAMETER: c_int = 1;
+pub const NOISE_ERROR_OUT_OF_MEMORY: c_int = 2;
+pub const NOISE_ERROR_HANDSHAKE_FAILED: c_int = 3;
+pub const NOISE_ERROR_ENCRYPTION_FAILED: c_int = 4;
+pub const NOISE_ERROR_DECRYPTION_FAILED: c_int = 5;
+pub const NOISE_ERROR_BUFFER_TOO_SMALL: c_int = 6;
+pub const NOISE_ERROR_INVALID_STATE: c_int = 7;
+pub const NOISE_ERROR_PROTOCOL_ERROR: c_int = 8;
+
 /// Create a new Noise session
 #[no_mangle]
 pub extern "C" fn noise_session_new(
