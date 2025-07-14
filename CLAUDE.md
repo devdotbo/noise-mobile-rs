@@ -6,11 +6,13 @@ You are implementing `noise-mobile-rust`, a mobile-optimized Rust library for th
 
 ## Critical Context
 
-1. **Snow Library Location**: The Snow library (Noise Protocol implementation) is available at `../snow`. You should reference it directly in Cargo.toml:
+1. **Snow Library Version**: 
+   **IMPORTANT UPDATE**: We are using snow 0.10.0-beta.2 from crates.io:
    ```toml
    [dependencies]
-   snow = { path = "../snow" }
+   snow = "0.10.0-beta.2"
    ```
+   Do NOT use the local path reference. The library is available on crates.io and should be used from there.
 
 2. **Purpose**: This is NOT a standalone app. It's a Rust library designed to be integrated into iOS (Swift) and Android (Kotlin) applications via FFI.
 
@@ -199,10 +201,55 @@ val handshakeMsg = session.writeMessage(ByteArray(0))
 
 ## Next Steps
 
-1. Run `cargo init --lib` to create the library
-2. Set up the module structure as outlined
-3. Implement core Noise wrapper first
-4. Add FFI layer incrementally
+1. ~~Run `cargo init --lib` to create the library~~ ✅
+2. ~~Set up the module structure as outlined~~ ✅
+3. ~~Implement core Noise wrapper first~~ ✅
+4. ~~Add FFI layer incrementally~~ ✅
 5. Test on real devices early and often
 
 Remember: This library's success depends on being genuinely useful for mobile developers. Keep the API simple, the performance good, and the integration painless.
+
+## Current Implementation Status (July 14, 2025)
+
+### What's Been Completed
+
+1. **Core Implementation** ✅
+   - Full Noise_XX pattern implementation using snow 0.10.0-beta.2
+   - Complete session lifecycle (handshake → transport)
+   - Three-state model to handle state transitions safely
+   - All core tests passing
+
+2. **FFI Layer** ✅
+   - Complete C API with all necessary functions
+   - Memory safety helpers in `ffi/helpers.rs`
+   - Proper error handling without panics
+   - Buffer size validation
+
+3. **Mobile Features** (Partial)
+   - Key storage abstraction ✅ (memory implementation only)
+   - Network resilience 🚧 (structure only)
+   - Battery optimization 🚧 (structure only)
+
+### Important Implementation Details
+
+1. **State Transition Handling**: The implementation uses a three-state model (Handshake, Transitioning, Transport) to safely handle the ownership transfer when moving from handshake to transport mode.
+
+2. **Memory Safety**: All FFI functions use helper functions for:
+   - Pointer validation (`validate_session_ptr`)
+   - Safe buffer operations (`copy_to_c_buffer`)
+   - Null-safe slice conversion (`c_to_slice`)
+
+3. **Error Handling**: No panics in FFI code. All errors are converted to error codes.
+
+4. **Testing**: 13 tests currently passing covering core functionality, FFI helpers, and key storage.
+
+### What Remains
+
+See `CURRENT_STATUS.md` and `TODO.md` for detailed information about remaining tasks. Key items:
+- Complete network resilience implementation
+- Complete battery optimization
+- Add comprehensive test suite
+- Create platform build scripts
+- Add integration examples
+
+The library is functional but needs the remaining features for production use.
