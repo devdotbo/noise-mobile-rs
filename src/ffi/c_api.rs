@@ -94,32 +94,22 @@ pub extern "C" fn noise_write_message(
     output: *mut c_uchar,
     output_len: *mut size_t,
 ) -> c_int {
-    if session.is_null() || output.is_null() || output_len.is_null() {
+    if !crate::ffi::helpers::validate_session_ptr(session) || output_len.is_null() {
         return NoiseErrorCode::InvalidParameter as c_int;
     }
     
     let session = unsafe { &mut *(session as *mut NoiseSession) };
-    let payload_slice = if payload.is_null() || payload_len == 0 {
-        &[]
-    } else {
-        unsafe { slice::from_raw_parts(payload, payload_len) }
+    let payload_slice = unsafe { 
+        crate::ffi::helpers::c_to_slice(payload, payload_len).unwrap_or(&[])
     };
     
     match session.write_message(payload_slice) {
         Ok(msg) => {
-            let msg_len = msg.len();
-            let available_len = unsafe { *output_len };
-            
-            if available_len < msg_len {
-                unsafe { *output_len = msg_len; }
-                return NoiseErrorCode::BufferTooSmall as c_int;
+            if unsafe { crate::ffi::helpers::copy_to_c_buffer(&msg, output, output_len) } {
+                NoiseErrorCode::Success as c_int
+            } else {
+                NoiseErrorCode::BufferTooSmall as c_int
             }
-            
-            unsafe {
-                ptr::copy_nonoverlapping(msg.as_ptr(), output, msg_len);
-                *output_len = msg_len;
-            }
-            NoiseErrorCode::Success as c_int
         }
         Err(e) => NoiseErrorCode::from(e) as c_int,
     }
@@ -134,32 +124,26 @@ pub extern "C" fn noise_read_message(
     payload: *mut c_uchar,
     payload_len: *mut size_t,
 ) -> c_int {
-    if session.is_null() || input.is_null() || payload_len.is_null() {
+    if !crate::ffi::helpers::validate_session_ptr(session) || input.is_null() || payload_len.is_null() {
         return NoiseErrorCode::InvalidParameter as c_int;
     }
     
     let session = unsafe { &mut *(session as *mut NoiseSession) };
-    let input_slice = unsafe { slice::from_raw_parts(input, input_len) };
+    let input_slice = match unsafe { crate::ffi::helpers::c_to_slice(input, input_len) } {
+        Some(slice) => slice,
+        None => return NoiseErrorCode::InvalidParameter as c_int,
+    };
     
     match session.read_message(input_slice) {
         Ok(msg) => {
-            let msg_len = msg.len();
-            
-            if msg_len > 0 && !payload.is_null() {
-                let available_len = unsafe { *payload_len };
-                
-                if available_len < msg_len {
-                    unsafe { *payload_len = msg_len; }
-                    return NoiseErrorCode::BufferTooSmall as c_int;
-                }
-                
-                unsafe {
-                    ptr::copy_nonoverlapping(msg.as_ptr(), payload, msg_len);
-                }
+            if msg.is_empty() {
+                unsafe { *payload_len = 0; }
+                NoiseErrorCode::Success as c_int
+            } else if unsafe { crate::ffi::helpers::copy_to_c_buffer(&msg, payload, payload_len) } {
+                NoiseErrorCode::Success as c_int
+            } else {
+                NoiseErrorCode::BufferTooSmall as c_int
             }
-            
-            unsafe { *payload_len = msg_len; }
-            NoiseErrorCode::Success as c_int
         }
         Err(e) => NoiseErrorCode::from(e) as c_int,
     }
@@ -168,7 +152,7 @@ pub extern "C" fn noise_read_message(
 /// Check if handshake is complete
 #[no_mangle]
 pub extern "C" fn noise_is_handshake_complete(session: *mut NoiseSessionFFI) -> c_int {
-    if session.is_null() {
+    if !crate::ffi::helpers::validate_session_ptr(session) {
         return 0;
     }
     
@@ -185,28 +169,23 @@ pub extern "C" fn noise_encrypt(
     ciphertext: *mut c_uchar,
     ciphertext_len: *mut size_t,
 ) -> c_int {
-    if session.is_null() || plaintext.is_null() || ciphertext.is_null() || ciphertext_len.is_null() {
+    if !crate::ffi::helpers::validate_session_ptr(session) || ciphertext_len.is_null() {
         return NoiseErrorCode::InvalidParameter as c_int;
     }
     
     let session = unsafe { &mut *(session as *mut NoiseSession) };
-    let plaintext_slice = unsafe { slice::from_raw_parts(plaintext, plaintext_len) };
+    let plaintext_slice = match unsafe { crate::ffi::helpers::c_to_slice(plaintext, plaintext_len) } {
+        Some(slice) => slice,
+        None => return NoiseErrorCode::InvalidParameter as c_int,
+    };
     
     match session.encrypt(plaintext_slice) {
         Ok(ct) => {
-            let ct_len = ct.len();
-            let available_len = unsafe { *ciphertext_len };
-            
-            if available_len < ct_len {
-                unsafe { *ciphertext_len = ct_len; }
-                return NoiseErrorCode::BufferTooSmall as c_int;
+            if unsafe { crate::ffi::helpers::copy_to_c_buffer(&ct, ciphertext, ciphertext_len) } {
+                NoiseErrorCode::Success as c_int
+            } else {
+                NoiseErrorCode::BufferTooSmall as c_int
             }
-            
-            unsafe {
-                ptr::copy_nonoverlapping(ct.as_ptr(), ciphertext, ct_len);
-                *ciphertext_len = ct_len;
-            }
-            NoiseErrorCode::Success as c_int
         }
         Err(e) => NoiseErrorCode::from(e) as c_int,
     }
@@ -221,28 +200,23 @@ pub extern "C" fn noise_decrypt(
     plaintext: *mut c_uchar,
     plaintext_len: *mut size_t,
 ) -> c_int {
-    if session.is_null() || ciphertext.is_null() || plaintext.is_null() || plaintext_len.is_null() {
+    if !crate::ffi::helpers::validate_session_ptr(session) || plaintext_len.is_null() {
         return NoiseErrorCode::InvalidParameter as c_int;
     }
     
     let session = unsafe { &mut *(session as *mut NoiseSession) };
-    let ciphertext_slice = unsafe { slice::from_raw_parts(ciphertext, ciphertext_len) };
+    let ciphertext_slice = match unsafe { crate::ffi::helpers::c_to_slice(ciphertext, ciphertext_len) } {
+        Some(slice) => slice,
+        None => return NoiseErrorCode::InvalidParameter as c_int,
+    };
     
     match session.decrypt(ciphertext_slice) {
         Ok(pt) => {
-            let pt_len = pt.len();
-            let available_len = unsafe { *plaintext_len };
-            
-            if available_len < pt_len {
-                unsafe { *plaintext_len = pt_len; }
-                return NoiseErrorCode::BufferTooSmall as c_int;
+            if unsafe { crate::ffi::helpers::copy_to_c_buffer(&pt, plaintext, plaintext_len) } {
+                NoiseErrorCode::Success as c_int
+            } else {
+                NoiseErrorCode::BufferTooSmall as c_int
             }
-            
-            unsafe {
-                ptr::copy_nonoverlapping(pt.as_ptr(), plaintext, pt_len);
-                *plaintext_len = pt_len;
-            }
-            NoiseErrorCode::Success as c_int
         }
         Err(e) => NoiseErrorCode::from(e) as c_int,
     }
@@ -255,7 +229,7 @@ pub extern "C" fn noise_get_remote_static(
     output: *mut c_uchar,
     output_len: *mut size_t,
 ) -> c_int {
-    if session.is_null() || output.is_null() || output_len.is_null() {
+    if !crate::ffi::helpers::validate_session_ptr(session) || output_len.is_null() {
         return NoiseErrorCode::InvalidParameter as c_int;
     }
     
@@ -263,19 +237,11 @@ pub extern "C" fn noise_get_remote_static(
     
     match session.get_remote_static() {
         Some(key) => {
-            let key_len = key.len();
-            let available_len = unsafe { *output_len };
-            
-            if available_len < key_len {
-                unsafe { *output_len = key_len; }
-                return NoiseErrorCode::BufferTooSmall as c_int;
+            if unsafe { crate::ffi::helpers::copy_to_c_buffer(key, output, output_len) } {
+                NoiseErrorCode::Success as c_int
+            } else {
+                NoiseErrorCode::BufferTooSmall as c_int
             }
-            
-            unsafe {
-                ptr::copy_nonoverlapping(key.as_ptr(), output, key_len);
-                *output_len = key_len;
-            }
-            NoiseErrorCode::Success as c_int
         }
         None => {
             unsafe { *output_len = 0; }

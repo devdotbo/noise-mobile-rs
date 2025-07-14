@@ -1,4 +1,3 @@
-#![doc = include_str!("../README.md")]
 #![warn(missing_docs)]
 #![warn(rust_2018_idioms)]
 
