@@ -1,3 +1,6 @@
+// Copyright 2025 PermissionlessTech Contributors
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 #![warn(missing_docs)]
 #![warn(rust_2018_idioms)]
 
